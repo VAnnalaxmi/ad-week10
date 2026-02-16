@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Smart Study Planner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════
+       CSS VARIABLES & RESET
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2330;
+      --border:    #30363d;
+      --accent:    #58a6ff;
+      --accent2:   #3fb950;
+      --accent3:   #ff7b72;
+      --accent4:   #d2a679;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --glow:      rgba(88, 166, 255, 0.15);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════════
+       ANIMATED BACKGROUND GRID
+    ═══════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(88,166,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(88,166,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 20px 60px;
+    }
+
+    /* ═══════════════════════════════════════════
+       HEADER
+    ═══════════════════════════════════════════ */
+    header {
+      text-align: center;
+      padding: 60px 0 40px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(88,166,255,0.1);
+      border: 1px solid rgba(88,166,255,0.3);
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 5px 14px;
+      border-radius: 20px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #e6edf3 0%, #58a6ff 60%, #3fb950 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 300;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ═══════════════════════════════════════════
+       CARDS / PANELS
+    ═══════════════════════════════════════════ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.6s ease both;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(88,166,255,0.4);
+      box-shadow: 0 0 30px var(--glow);
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .icon-blue { background: rgba(88,166,255,0.15); }
+    .icon-green { background: rgba(63,185,80,0.15); }
+    .icon-orange { background: rgba(210,166,121,0.15); }
+    .icon-red { background: rgba(255,123,114,0.15); }
+
+    /* ═══════════════════════════════════════════
+       FORM
+    ═══════════════════════════════════════════ */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="number"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 15px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.25s, box-shadow 0.25s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(88,166,255,0.12);
+    }
+
+    input::placeholder { color: var(--muted); }
+
+    .input-hint {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ═══════════════════════════════════════════
+       BUTTON
+    ═══════════════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 30px;
+      border-radius: 10px;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #1f6feb);
+      color: #fff;
+      width: 100%;
+      margin-top: 22px;
+      box-shadow: 0 4px 20px rgba(88,166,255,0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(88,166,255,0.4);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-sm {
+      padding: 6px 14px;
+      font-size: 12px;
+      border-radius: 6px;
+    }
+
+    .btn-complete {
+      background: rgba(63,185,80,0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(63,185,80,0.3);
+    }
+
+    .btn-complete:hover {
+      background: rgba(63,185,80,0.25);
+    }
+
+    .btn-undo {
+      background: rgba(255,123,114,0.1);
+      color: var(--accent3);
+      border: 1px solid rgba(255,123,114,0.3);
+    }
+
+    .btn-undo:hover { background: rgba(255,123,114,0.2); }
+
+    .btn-refresh {
+      background: rgba(210,166,121,0.1);
+      color: var(--accent4);
+      border: 1px solid rgba(210,166,121,0.3);
+    }
+    .btn-refresh:hover { background: rgba(210,166,121,0.2); }
+
+    .btn-danger {
+      background: rgba(255,123,114,0.1);
+      color: var(--accent3);
+      border: 1px solid rgba(255,123,114,0.3);
+      font-size: 11px;
+      padding: 4px 10px;
+    }
+
+    /* ═══════════════════════════════════════════
+       LOADING SPINNER
+    ═══════════════════════════════════════════ */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    /* ═══════════════════════════════════════════
+       TOAST / ALERT
+    ═══════════════════════════════════════════ */
+    #toast {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      font-size: 14px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+      z-index: 1000;
+      transform: translateX(120%);
+      transition: transform 0.35s ease;
+      max-width: 300px;
+    }
+
+    #toast.show { transform: translateX(0); }
+    #toast.success { border-color: var(--accent2); color: var(--accent2); }
+    #toast.error   { border-color: var(--accent3); color: var(--accent3); }
+
+    /* ═══════════════════════════════════════════
+       STATS STRIP
+    ═══════════════════════════════════════════ */
+    .stats-strip {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ═══════════════════════════════════════════
+       TIMETABLE LIST
+    ═══════════════════════════════════════════ */
+    #timetable-section { display: none; }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 10px;
+      transition: all 0.25s;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .task-item:hover {
+      border-color: rgba(88,166,255,0.3);
+      transform: translateX(4px);
+    }
+
+    .task-item.completed {
+      opacity: 0.55;
+      border-color: rgba(63,185,80,0.2);
+      background: rgba(63,185,80,0.04);
+    }
+
+    .task-day {
+      min-width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: rgba(88,166,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .task-info { flex: 1; min-width: 0; }
+
+    .task-date {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 3px;
+    }
+
+    .task-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task-units {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .task-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-pending {
+      background: rgba(255,193,7,0.1);
+      color: #ffc107;
+      border: 1px solid rgba(255,193,7,0.3);
+    }
+
+    .badge-completed {
+      background: rgba(63,185,80,0.1);
+      color: var(--accent2);
+      border: 1px solid rgba(63,185,80,0.3);
+    }
+
+    /* PROGRESS BAR */
+    .progress-bar-wrap {
+      background: var(--surface2);
+      border-radius: 100px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent2), #58a6ff);
+      border-radius: 100px;
+      transition: width 0.6s ease;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ═══════════════════════════════════════════
+       REMINDERS & TIPS
+    ═══════════════════════════════════════════ */
+    .tip-box {
+      border-radius: 12px;
+      padding: 18px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.5;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .tip-box .tip-icon {
+      font-size: 22px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .tip-box.relaxation {
+      background: rgba(63,185,80,0.08);
+      border: 1px solid rgba(63,185,80,0.25);
+      color: #a7f3d0;
+      margin-bottom: 14px;
+    }
+
+    .tip-box.focus {
+      background: rgba(88,166,255,0.08);
+      border: 1px solid rgba(88,166,255,0.25);
+      color: #bde0ff;
+      margin-bottom: 14px;
+    }
+
+    .tip-box.break {
+      background: rgba(210,166,121,0.08);
+      border: 1px solid rgba(210,166,121,0.25);
+      color: #f6d9b5;
+    }
+
+    /* ═══════════════════════════════════════════
+       PLAN HISTORY (VIEW ALL)
+    ═══════════════════════════════════════════ */
+    #history-section { display: none; }
+
+    .subject-group {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .subject-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface2);
+      padding: 14px 18px;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .subject-header:hover { background: rgba(88,166,255,0.05); }
+
+    .subject-tasks { padding: 8px 14px 14px; }
+
+    .history-task-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      gap: 10px;
+    }
+
+    .history-task-row:last-child { border-bottom: none; }
+
+    /* ═══════════════════════════════════════════
+       FOOTER
+    ═══════════════════════════════════════════ */
+    footer {
+      text-align: center;
+      padding: 30px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.3px;
+    }
+
+    footer span { color: var(--accent3); }
+
+    /* ═══════════════════════════════════════════
+       EMPTY STATE
+    ═══════════════════════════════════════════ */
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+
+    .empty-state .big-icon { font-size: 40px; margin-bottom: 12px; }
+
+    /* ═══════════════════════════════════════════
+       ANIMATIONS
+    ═══════════════════════════════════════════ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Stagger animations */
+    .card:nth-child(1) { animation-delay: 0.05s; }
+    .card:nth-child(2) { animation-delay: 0.15s; }
+    .card:nth-child(3) { animation-delay: 0.25s; }
+    .stats-strip       { animation-delay: 0.1s; }
+
+    /* NAV TABS */
+    .nav-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+    }
+
+    .nav-tab {
+      padding: 10px 20px;
+      border-radius: 8px 8px 0 0;
+      border: 1px solid transparent;
+      border-bottom: none;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      background: none;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .nav-tab:hover { color: var(--text); }
+
+    .nav-tab.active {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--accent);
+      margin-bottom: -1px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<div class="wrapper">
+  <!-- HEADER -->
+  <header>
+    <div class="header-badge">⚡ AI-Powered</div>
+    <h1>Smart Study Planner</h1>
+    <p>Intelligent scheduling & stress management — built for students who mean business.</p>
+  </header>
+
+  <!-- NAV -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('planner')">📅 Generate Plan</button>
+    <button class="nav-tab" onclick="showTab('history')">🗂 Saved Plans</button>
+    <button class="nav-tab" onclick="showTab('wellness')">🧘 Wellness Hub</button>
+  </div>
+
+  <!-- ─── TAB 1: PLANNER ─── -->
+  <div id="tab-planner">
+    <!-- INPUT FORM -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-blue">📚</span>
+        Create Your Study Plan
+      </div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="subject">Subject Name</label>
+          <input type="text" id="subject" placeholder="e.g., Data Structures" />
+        </div>
+        <div class="form-group">
+          <label for="total_units">Total Syllabus Units</label>
+          <input type="number" id="total_units" placeholder="e.g., 10" min="1" />
+        </div>
+        <div class="form-group">
+          <label for="total_days">Days Until Exam</label>
+          <input type="number" id="total_days" placeholder="e.g., 7" min="1" />
+          <span class="input-hint">Number of days you have to prepare</span>
+        </div>
+        <div class="form-group">
+          <label for="daily_hours">Daily Study Hours</label>
+          <input type="number" id="daily_hours" placeholder="e.g., 3" min="0.5" max="16" step="0.5" />
+          <span class="input-hint">Hours you can study per day</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="generatePlan()" id="gen-btn">
+        <span class="spinner" id="spinner"></span>
+        <span id="btn-text">🤖 Generate AI Study Plan</span>
+      </button>
+    </div>
+
+    <!-- GENERATED TIMETABLE -->
+    <div id="timetable-section">
+      <div class="stats-strip" id="stats-strip">
+        <div class="stat-box">
+          <span class="stat-number" id="stat-days">—</span>
+          <span class="stat-label">Study Days</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-number" id="stat-tasks">—</span>
+          <span class="stat-label">Total Tasks</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-number" id="stat-done">0%</span>
+          <span class="stat-label">Completed</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="justify-content: space-between;">
+          <span style="display:flex;align-items:center;gap:10px;">
+            <span class="icon icon-green">📋</span>
+            <span id="plan-subject-title">Your Study Timetable</span>
+          </span>
+        </div>
+
+        <!-- PROGRESS -->
+        <div style="margin-bottom:20px;">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+          <div class="progress-label">
+            <span>Progress</span>
+            <span id="progress-text">0 / 0 tasks</span>
+          </div>
+        </div>
+
+        <!-- REMINDER BOXES IN PLAN -->
+        <div id="inline-reminder" style="margin-bottom:16px;display:none;">
+          <div class="tip-box focus">
+            <span class="tip-icon">🎯</span>
+            <span id="inline-focus-text"></span>
+          </div>
+          <div class="tip-box relaxation">
+            <span class="tip-icon">🌿</span>
+            <span id="inline-relax-text"></span>
+          </div>
+        </div>
+
+        <!-- TASK LIST -->
+        <div id="task-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB 2: HISTORY ─── -->
+  <div id="tab-history" style="display:none;">
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between;">
+        <span style="display:flex;align-items:center;gap:10px;">
+          <span class="icon icon-orange">🗂</span> All Saved Study Plans
+        </span>
+        <button class="btn btn-sm btn-refresh" onclick="loadHistory()">↻ Refresh</button>
+      </div>
+      <div id="history-content">
+        <div class="empty-state">
+          <div class="big-icon">📭</div>
+          <p>No plans saved yet. Generate your first plan!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── TAB 3: WELLNESS ─── -->
+  <div id="tab-wellness" style="display:none;">
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-green">🧘</span>
+        Stress Management & Wellness
+      </div>
+
+      <div class="tip-box relaxation" style="margin-bottom:16px;">
+        <span class="tip-icon">🌿</span>
+        <div>
+          <strong style="display:block;margin-bottom:4px;font-size:13px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">Relaxation Tip</strong>
+          <span id="wellness-relax">Click refresh to get a new tip!</span>
+        </div>
+      </div>
+
+      <div class="tip-box focus" style="margin-bottom:16px;">
+        <span class="tip-icon">🎯</span>
+        <div>
+          <strong style="display:block;margin-bottom:4px;font-size:13px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">Focus Reminder</strong>
+          <span id="wellness-focus">Stay off social media during study sessions!</span>
+        </div>
+      </div>
+
+      <div class="tip-box break" style="margin-bottom:16px;">
+        <span class="tip-icon">⏰</span>
+        <div>
+          <strong style="display:block;margin-bottom:4px;font-size:13px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">Break Reminder</strong>
+          Take a 5–10 minute break every 45 minutes of studying. Your brain needs recovery time to consolidate memory effectively.
+        </div>
+      </div>
+
+      <div class="tip-box break">
+        <span class="tip-icon">😴</span>
+        <div>
+          <strong style="display:block;margin-bottom:4px;font-size:13px;opacity:0.7;text-transform:uppercase;letter-spacing:0.5px;">Sleep is Non-Negotiable</strong>
+          Sleep deprivation reduces retention by up to 40%. Aim for 7–8 hours. Don't sacrifice sleep for last-minute cramming!
+        </div>
+      </div>
+
+      <button class="btn btn-sm btn-refresh" onclick="refreshTips()" style="margin-top:20px;">
+        ↻ Refresh Tips
+      </button>
+    </div>
+
+    <!-- POMODORO TIMER -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon icon-red">⏱</span>
+        Pomodoro Focus Timer
+      </div>
+      <div style="text-align:center;">
+        <div id="timer-display" style="font-family:'Playfair Display',serif;font-size:4rem;font-weight:900;color:var(--accent);margin:20px 0;letter-spacing:4px;">25:00</div>
+        <p style="color:var(--muted);margin-bottom:20px;font-size:14px;">Study 25 min → Break 5 min. Repeat 4 times, then take a long 20-min break.</p>
+        <div style="display:flex;gap:10px;justify-content:center;">
+          <button class="btn btn-sm btn-complete" onclick="startTimer()">▶ Start</button>
+          <button class="btn btn-sm btn-undo" onclick="pauseTimer()">⏸ Pause</button>
+          <button class="btn btn-sm btn-refresh" onclick="resetTimer()">↺ Reset</button>
+        </div>
+        <p id="timer-status" style="color:var(--muted);margin-top:14px;font-size:13px;">Ready to focus? Press Start!</p>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Made with <span>♥</span> for students · AI Smart Study Planner · Python + Flask + SQLite
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+  /* ── State ── */
+  let currentPlan   = [];
+  let timerInterval = null;
+  let timerSeconds  = 25 * 60;
+  let isRunning     = false;
+  let isBreak       = false;
+
+  /* ── Tab Navigation ── */
+  function showTab(name) {
+    ['planner','history','wellness'].forEach(t => {
+      document.getElementById('tab-' + t).style.display = t === name ? '' : 'none';
+    });
+    document.querySelectorAll('.nav-tab').forEach((btn, i) => {
+      btn.classList.remove('active');
+    });
+    const tabs = ['planner','history','wellness'];
+    document.querySelectorAll('.nav-tab')[tabs.indexOf(name)].classList.add('active');
+    if (name === 'history') loadHistory();
+    if (name === 'wellness') refreshTips();
+  }
+
+  /* ── Toast Notifications ── */
+  function showToast(msg, type = 'success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = `show ${type}`;
+    setTimeout(() => { t.className = ''; }, 3500);
+  }
+
+  /* ── Generate Plan ── */
+  async function generatePlan() {
+    const subject     = document.getElementById('subject').value.trim();
+    const total_units = parseFloat(document.getElementById('total_units').value);
+    const total_days  = parseInt(document.getElementById('total_days').value);
+    const daily_hours = parseFloat(document.getElementById('daily_hours').value);
+
+    if (!subject || isNaN(total_units) || isNaN(total_days) || isNaN(daily_hours)) {
+      showToast('❌ Please fill in all fields!', 'error');
+      return;
+    }
+
+    const btn = document.getElementById('gen-btn');
+    const sp  = document.getElementById('spinner');
+    const bt  = document.getElementById('btn-text');
+    btn.disabled = true;
+    sp.style.display = 'block';
+    bt.textContent = 'Generating...';
+
+    try {
+      const res  = await fetch('/generate', {
+        method:  'POST',
+        headers: {'Content-Type': 'application/json'},
+        body:    JSON.stringify({ subject, total_units, total_days, daily_hours })
+      });
+      const data = await res.json();
+
+      if (!res.ok) { showToast('❌ ' + data.error, 'error'); return; }
+
+      currentPlan = data.schedule;
+      renderTimetable(data);
+      showToast('✅ ' + data.message);
+
+    } catch(e) {
+      showToast('❌ Server error. Make sure Flask is running!', 'error');
+    } finally {
+      btn.disabled = false;
+      sp.style.display = 'none';
+      bt.textContent = '🤖 Generate AI Study Plan';
+    }
+  }
+
+  /* ── Render Timetable ── */
+  function renderTimetable(data) {
+    const section = document.getElementById('timetable-section');
+    section.style.display = '';
+
+    document.getElementById('stat-days').textContent  = data.total_days;
+    document.getElementById('stat-tasks').textContent = data.schedule.length;
+    document.getElementById('plan-subject-title').textContent =
+      `📚 ${document.getElementById('subject').value.trim()} — Timetable`;
+
+    // Reminders
+    document.getElementById('inline-reminder').style.display = '';
+    document.getElementById('inline-focus-text').textContent = data.focus_reminder;
+    document.getElementById('inline-relax-text').textContent = data.relaxation_tip;
+
+    renderTaskList(data.schedule);
+    updateProgress(data.schedule);
+  }
+
+  function renderTaskList(tasks) {
+    const list = document.getElementById('task-list');
+    if (!tasks.length) {
+      list.innerHTML = '<div class="empty-state"><div class="big-icon">📭</div><p>No tasks generated.</p></div>';
+      return;
+    }
+
+    list.innerHTML = tasks.map(t => `
+      <div class="task-item ${t.status === 'Completed' ? 'completed' : ''}" id="task-item-${t.id}">
+        <div class="task-day">D${t.day}</div>
+        <div class="task-info">
+          <div class="task-date">${t.date_label}</div>
+          <div class="task-text" title="${t.task}">${t.task}</div>
+          <div class="task-units">📦 ${t.units} units</div>
+        </div>
+        <div class="task-actions">
+          <span class="badge ${t.status === 'Completed' ? 'badge-completed' : 'badge-pending'}">
+            ${t.status === 'Completed' ? '✅ Done' : '⏳ Pending'}
+          </span>
+          ${t.status !== 'Completed'
+            ? `<button class="btn btn-sm btn-complete" onclick="toggleStatus(${t.id},'Completed')">✓ Mark Done</button>`
+            : `<button class="btn btn-sm btn-undo" onclick="toggleStatus(${t.id},'Pending')">↩ Undo</button>`
+          }
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function updateProgress(tasks) {
+    const done  = tasks.filter(t => t.status === 'Completed').length;
+    const total = tasks.length;
+    const pct   = total ? Math.round((done / total) * 100) : 0;
+
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-text').textContent = `${done} / ${total} tasks`;
+    document.getElementById('stat-done').textContent     = pct + '%';
+  }
+
+  /* ── Toggle Task Status ── */
+  async function toggleStatus(id, status) {
+    try {
+      const res  = await fetch('/update_status', {
+        method:  'POST',
+        headers: {'Content-Type': 'application/json'},
+        body:    JSON.stringify({ id, status })
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast('❌ ' + data.error, 'error'); return; }
+
+      // Update local plan
+      const task = currentPlan.find(t => t.id === id);
+      if (task) task.status = status;
+
+      renderTaskList(currentPlan);
+      updateProgress(currentPlan);
+      showToast(status === 'Completed' ? '✅ Task completed!' : '↩ Marked as pending');
+    } catch(e) {
+      showToast('❌ Update failed.', 'error');
+    }
+  }
+
+  /* ── Load History ── */
+  async function loadHistory() {
+    const content = document.getElementById('history-content');
+    content.innerHTML = '<div style="text-align:center;color:var(--muted);padding:30px;">Loading...</div>';
+
+    try {
+      const res  = await fetch('/plans');
+      const data = await res.json();
+      const plans = data.plans;
+
+      if (!plans.length) {
+        content.innerHTML = `<div class="empty-state"><div class="big-icon">📭</div><p>No plans saved yet.</p></div>`;
+        return;
+      }
+
+      // Group by subject
+      const grouped = {};
+      plans.forEach(p => {
+        if (!grouped[p.subject]) grouped[p.subject] = [];
+        grouped[p.subject].push(p);
+      });
+
+      content.innerHTML = Object.entries(grouped).map(([subject, tasks]) => {
+        const done = tasks.filter(t => t.status === 'Completed').length;
+        const pct  = Math.round((done / tasks.length) * 100);
+        return `
+          <div class="subject-group">
+            <div class="subject-header" onclick="toggleSubjectGroup('${subject}')">
+              <span>📚 ${subject}
+                <span style="color:var(--muted);font-weight:400;font-size:12px;margin-left:8px;">
+                  ${tasks.length} tasks · ${pct}% done
+                </span>
+              </span>
+              <button class="btn btn-danger" onclick="event.stopPropagation();deletePlan('${subject}')">🗑 Delete</button>
+            </div>
+            <div class="subject-tasks" id="grp-${CSS.escape(subject)}">
+              ${tasks.map(t => `
+                <div class="history-task-row">
+                  <span style="color:var(--muted);font-size:11px;min-width:30px;">D${t.day}</span>
+                  <span style="flex:1;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.task}</span>
+                  <span class="badge ${t.status === 'Completed' ? 'badge-completed' : 'badge-pending'}">
+                    ${t.status === 'Completed' ? '✅ Done' : '⏳ Pending'}
+                  </span>
+                </div>
+              `).join('')}
+            </div>
+          </div>`;
+      }).join('');
+    } catch(e) {
+      content.innerHTML = `<div class="empty-state"><div class="big-icon">⚠️</div><p>Failed to load. Is Flask running?</p></div>`;
+    }
+  }
+
+  function toggleSubjectGroup(subject) {
+    const el = document.getElementById(`grp-${CSS.escape(subject)}`);
+    el.style.display = el.style.display === 'none' ? '' : 'none';
+  }
+
+  /* ── Delete Plan ── */
+  async function deletePlan(subject) {
+    if (!confirm(`Delete the entire plan for "${subject}"?`)) return;
+    try {
+      const res  = await fetch('/delete_plan', {
+        method:  'POST',
+        headers: {'Content-Type': 'application/json'},
+        body:    JSON.stringify({ subject })
+      });
+      const data = await res.json();
+      showToast('🗑 ' + data.message);
+      loadHistory();
+    } catch(e) {
+      showToast('❌ Delete failed.', 'error');
+    }
+  }
+
+  /* ── Refresh Tips ── */
+  async function refreshTips() {
+    try {
+      const res  = await fetch('/tips');
+      const data = await res.json();
+      document.getElementById('wellness-relax').textContent = data.relaxation_tip;
+      document.getElementById('wellness-focus').textContent = data.focus_reminder;
+    } catch(e) { /* ignore */ }
+  }
+
+  /* ── Pomodoro Timer ── */
+  function updateTimerDisplay() {
+    const m = String(Math.floor(timerSeconds / 60)).padStart(2, '0');
+    const s = String(timerSeconds % 60).padStart(2, '0');
+    document.getElementById('timer-display').textContent = `${m}:${s}`;
+  }
+
+  function startTimer() {
+    if (isRunning) return;
+    isRunning = true;
+    document.getElementById('timer-status').textContent = isBreak ? '☕ Break time!' : '🔥 Focus session running!';
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds <= 0) {
+        clearInterval(timerInterval);
+        isRunning = false;
+        if (!isBreak) {
+          isBreak = true;
+          timerSeconds = 5 * 60;
+          document.getElementById('timer-status').textContent = '✅ Study done! Starting break...';
+          setTimeout(startTimer, 1000);
+        } else {
+          isBreak = false;
+          timerSeconds = 25 * 60;
+          document.getElementById('timer-status').textContent = '✅ Break done! Ready for next session.';
+          updateTimerDisplay();
+        }
+      }
+    }, 1000);
+  }
+
+  function pauseTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    document.getElementById('timer-status').textContent = '⏸ Paused. Press Start to continue.';
+  }
+
+  function resetTimer() {
+    clearInterval(timerInterval);
+    isRunning = false;
+    isBreak   = false;
+    timerSeconds = 25 * 60;
+    updateTimerDisplay();
+    document.getElementById('timer-status').textContent = 'Ready to focus? Press Start!';
+  }
+
+  /* ── Init ── */
+  updateTimerDisplay();
+</script>
+</body>
+</html>
